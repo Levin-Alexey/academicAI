@@ -1,0 +1,91 @@
+import aiohttp
+import asyncio
+from typing import List, Dict, Optional
+from config import OPENROUTER_API_KEY, OPENROUTER_BASE_URL
+from services.user_service import user_service
+
+
+class OpenRouterClient:
+    """Упрощенный клиент для работы с OpenRouter API"""
+
+    def __init__(self):
+        self.api_key = OPENROUTER_API_KEY
+        self.base_url = OPENROUTER_BASE_URL
+        self.headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+            "HTTP-Referer": "https://academic-bot.com",
+            "X-Title": "Academic Assistant Bot"
+        }
+
+    async def generate_text(self, user_id: int, prompt: str, context: List[Dict] = None) -> str:
+        """
+        Генерация текста через OpenRouter с автоматическим получением модели из БД
+
+        Args:
+            user_id: ID пользователя в Telegram
+            prompt: Пользовательский запрос
+            context: Контекст разговора (список сообщений)
+
+        Returns:
+            Сгенерированный текст
+        """
+        # ПОЛУЧАЕМ МОДЕЛЬ ИЗ БАЗЫ ДАННЫХ
+        model = await user_service.get_user_model(user_id)
+
+        # Системный промпт для академических работ
+        system_prompt = """
+Ты - профессиональный помощник для написания академических работ в российских вузах.
+
+Твои принципы:
+- Отвечай только на русском языке
+- Используй академический стиль изложения
+- Структурируй информацию логично
+- Соблюдай требования к оформлению по ГОСТ
+- Создавай качественные, детальные тексты
+
+Когда пользователь просит структуру - создай подробный план работы.
+Когда просит главу - пиши развернутый текст этой главы.
+Помни контекст предыдущих сообщений для связности работы.
+"""
+
+        messages = [{"role": "system", "content": system_prompt}]
+
+        # Добавляем контекст если есть
+        if context:
+            messages.extend(context)
+
+        # Добавляем текущий запрос
+        messages.append({"role": "user", "content": prompt})
+
+        payload = {
+            "model": model,  # ← МОДЕЛЬ ИЗ БАЗЫ ДАННЫХ!
+            "messages": messages,
+            "max_tokens": 40000,
+            "temperature": 0.7
+        }
+
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                        f"{self.base_url}/chat/completions",
+                        headers=self.headers,
+                        json=payload,
+                        timeout=aiohttp.ClientTimeout(total=60)
+                ) as response:
+
+                    if response.status == 200:
+                        result = await response.json()
+                        return result["choices"][0]["message"]["content"]
+                    else:
+                        error_text = await response.text()
+                        raise Exception(f"OpenRouter API error: {response.status} - {error_text}")
+
+        except asyncio.TimeoutError:
+            raise Exception("Timeout: Запрос занял слишком много времени")
+        except Exception as e:
+            raise Exception(f"Ошибка при обращении к OpenRouter: {str(e)}")
+
+
+# Создаем глобальный экземпляр клиента
+openrouter_client = OpenRouterClient()
