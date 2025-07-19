@@ -6,13 +6,43 @@
 .idea/
 __pycache__/
 *.pyc
+venv/
+env/
 
-# Конфигурация
+# Конфигурация и секреты
 .env
+.env.local
+.env.production
+config_local.py
+secrets.py
 helper_functions/
-alembic.ini  # лучше хранить только если он универсальный, иначе локально
+
+# База данных
+*.db
+*.sqlite
+*.sqlite3
+alembic.ini
 migrations/env.pyc
 migrations/__pycache__/
 migrations/versions/__pycache__/
+
+# Логи
+*.log
+logs/
+
+# Временные файлы
+temp_*
+test_*
+*.tmp
+*.bak
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python
 *.pyc
 __pycache__/
+.pytest_cache/
+.coverage
+htmlcov/

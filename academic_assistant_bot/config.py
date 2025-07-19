@@ -14,16 +14,15 @@ OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
 # Redis Configuration
-REDIS_URL = "redis://:RedisBot2025!@89.169.37.119:6379/0"
-REDIS_HOST = "89.169.37.119"
-REDIS_PORT = 6379
-REDIS_PASSWORD = "RedisBot2025!"
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
+REDIS_PASSWORD = os.getenv("REDIS_PASSWORD")
 
 # Allowed Users (список разрешенных Telegram ID)
 ALLOWED_USERS = [
-    525944420,  # Замените на реальные ID
-    150333241,
-    # Добавьте больше ID по необходимости
+    # Добавьте ваши Telegram ID через переменные окружения
+    # или настройте через админ панель бота
 ]
 
 # Models

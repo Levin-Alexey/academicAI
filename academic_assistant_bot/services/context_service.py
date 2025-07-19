@@ -10,10 +10,10 @@ try:
     from config import REDIS_URL, REDIS_HOST, REDIS_PORT, REDIS_PASSWORD
 except ImportError:
     # Для тестирования без config
-    REDIS_URL = "redis://:RedisBot2025!@89.169.37.119:6379/0"
-    REDIS_HOST = "89.169.37.119"
+    REDIS_URL = "redis://localhost:6379/0"
+    REDIS_HOST = "localhost"
     REDIS_PORT = 6379
-    REDIS_PASSWORD = "RedisBot2025!"
+    REDIS_PASSWORD = None
 
 class ContextService:
     """Сервис для работы с контекстом разговоров"""
