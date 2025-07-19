@@ -23,8 +23,9 @@ async def handle_work_message(message: Message, state: FSMContext):
         # Получаем ответ от LLM через OpenRouter
         response = await openrouter_client.generate_text(user_id, user_message)
 
-        # Создаем txt файл
-        txt_content = response.encode('utf-8')
+        # Создаем txt файл (удаляем символы * для чистого текста)
+        clean_response = response.replace('*', '')
+        txt_content = clean_response.encode('utf-8')
         txt_file = BufferedInputFile(txt_content, filename="response.txt")
 
         # Отправляем файл пользователю
