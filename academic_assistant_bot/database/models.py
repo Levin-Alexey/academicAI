@@ -1,6 +1,3 @@
-from sqlalchemy import BigInteger, String
-from sqlalchemy.orm import Mapped, mapped_column
-from database.session import Base
 import datetime
 from sqlalchemy import BigInteger, Integer, String, DateTime, func, ForeignKey, Text, Boolean
 from sqlalchemy.orm import Mapped, mapped_column
@@ -36,4 +33,14 @@ class Deal(Base):
     stars_given: Mapped[bool] = mapped_column(Boolean, default=False)  # Флаг: выданы ли звезды за сделку
 
     created_at: Mapped[datetime.datetime] = mapped_column(server_default=func.now())
+
+class AllowedUsers(Base):
+    __tablename__ = "allowed_users"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    telegram_id: Mapped[int] = mapped_column(BigInteger, unique=True, index=True)
+    first_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    username: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    added_at: Mapped[datetime.datetime] = mapped_column(server_default=func.now())
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 

@@ -1,11 +1,11 @@
 from typing import Callable, Dict, Any, Awaitable
 from aiogram import BaseMiddleware
 from aiogram.types import Message, CallbackQuery
-from config import ALLOWED_USERS
+from services.access_service import access_service
 
 
 class AccessMiddleware(BaseMiddleware):
-    """Middleware для проверки доступа пользователей"""
+    """Middleware для проверки доступа пользователей через базу данных"""
 
     async def __call__(
             self,
@@ -17,8 +17,10 @@ class AccessMiddleware(BaseMiddleware):
         # Получаем ID пользователя
         user_id = event.from_user.id
 
-        # Проверяем доступ
-        if user_id not in ALLOWED_USERS:
+        # Проверяем доступ через базу данных
+        is_allowed = await access_service.is_user_allowed(user_id)
+        
+        if not is_allowed:
             if isinstance(event, Message):
                 await event.answer(
                     "🔒 Этот бот является закрытым и доступен только для определенного круга пользователей.\n\n"

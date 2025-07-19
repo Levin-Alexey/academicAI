@@ -7,6 +7,8 @@ def get_main_menu() -> InlineKeyboardMarkup:
     keyboard = InlineKeyboardBuilder()
 
     keyboard.button(text="📝 Новая работа", callback_data="new_work")
+    keyboard.button(text="🗑️ Очистить контекст", callback_data="clear_context")
+    keyboard.button(text="👥 Управление пользователями", callback_data="user_management")
     keyboard.button(text="⚙️ Настройки", callback_data="settings")
     keyboard.button(text="ℹ️ Помощь", callback_data="help")
 
@@ -36,6 +38,19 @@ def get_settings_menu(current_model: str) -> InlineKeyboardMarkup:
     keyboard.button(text="⬅️ Назад", callback_data="back_to_main")
     keyboard.adjust(1)
 
+    return keyboard.as_markup()
+
+
+def get_user_management_menu() -> InlineKeyboardMarkup:
+    """Меню управления пользователями"""
+    keyboard = InlineKeyboardBuilder()
+
+    keyboard.button(text="📋 Список пользователей", callback_data="list_users")
+    keyboard.button(text="➕ Добавить нового", callback_data="add_user")
+    keyboard.button(text="❌ Удалить пользователя", callback_data="remove_user")
+    keyboard.button(text="⬅️ Назад в меню", callback_data="back_to_main")
+
+    keyboard.adjust(1)  # По одной кнопке в ряд
     return keyboard.as_markup()
 
 

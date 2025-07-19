@@ -3,6 +3,7 @@ import asyncio
 from typing import List, Dict, Optional
 from config import OPENROUTER_API_KEY, OPENROUTER_BASE_URL
 from services.user_service import user_service
+from services.context_service import context_service
 
 
 class OpenRouterClient:
@@ -18,14 +19,14 @@ class OpenRouterClient:
             "X-Title": "Academic Assistant Bot"
         }
 
-    async def generate_text(self, user_id: int, prompt: str, context: List[Dict] = None) -> str:
+    async def generate_text(self, user_id: int, prompt: str, use_context: bool = True) -> str:
         """
         Генерация текста через OpenRouter с автоматическим получением модели из БД
 
         Args:
             user_id: ID пользователя в Telegram
             prompt: Пользовательский запрос
-            context: Контекст разговора (список сообщений)
+            use_context: Использовать ли контекст из Redis
 
         Returns:
             Сгенерированный текст
@@ -51,9 +52,11 @@ class OpenRouterClient:
 
         messages = [{"role": "system", "content": system_prompt}]
 
-        # Добавляем контекст если есть
-        if context:
-            messages.extend(context)
+        # Получаем контекст из Redis если нужно
+        if use_context:
+            context = await context_service.get_context(user_id)
+            if context:
+                messages.extend(context)
 
         # Добавляем текущий запрос
         messages.append({"role": "user", "content": prompt})
@@ -76,7 +79,16 @@ class OpenRouterClient:
 
                     if response.status == 200:
                         result = await response.json()
-                        return result["choices"][0]["message"]["content"]
+                        generated_text = result["choices"][0]["message"]["content"]
+                        
+                        # Сохраняем контекст разговора в Redis
+                        if use_context:
+                            # Добавляем запрос пользователя
+                            await context_service.add_message_to_context(user_id, "user", prompt)
+                            # Добавляем ответ ассистента
+                            await context_service.add_message_to_context(user_id, "assistant", generated_text)
+                        
+                        return generated_text
                     else:
                         error_text = await response.text()
                         raise Exception(f"OpenRouter API error: {response.status} - {error_text}")
@@ -85,6 +97,30 @@ class OpenRouterClient:
             raise Exception("Timeout: Запрос занял слишком много времени")
         except Exception as e:
             raise Exception(f"Ошибка при обращении к OpenRouter: {str(e)}")
+
+    async def clear_user_context(self, user_id: int) -> bool:
+        """
+        Очистить контекст разговора пользователя
+        
+        Args:
+            user_id: ID пользователя в Telegram
+            
+        Returns:
+            True если очистка прошла успешно
+        """
+        return await context_service.clear_context(user_id)
+
+    async def get_context_info(self, user_id: int) -> dict:
+        """
+        Получить информацию о контексте пользователя
+        
+        Args:
+            user_id: ID пользователя в Telegram
+            
+        Returns:
+            Информация о контексте
+        """
+        return await context_service.get_context_info(user_id)
 
 
 # Создаем глобальный экземпляр клиента
