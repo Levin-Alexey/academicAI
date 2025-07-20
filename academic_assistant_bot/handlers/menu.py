@@ -293,6 +293,75 @@ async def handle_add_user_id(message: Message, state: FSMContext):
         await state.clear()
 
 
+@router.message(UserManagementStates.waiting_for_user_id_to_remove)
+async def handle_remove_user_id(message: Message, state: FSMContext):
+    """Обработка ID пользователя для удаления"""
+    try:
+        # Валидация ID
+        user_id_text = message.text.strip()
+        
+        if not user_id_text.isdigit():
+            await message.answer(
+                "❌ Ошибка: ID должен содержать только цифры.\n\n"
+                "Попробуйте еще раз или нажмите 'Назад' для отмены.",
+                reply_markup=get_user_management_menu()
+            )
+            return
+        
+        telegram_id = int(user_id_text)
+        
+        # Проверяем диапазон Telegram ID (обычно больше 1000)
+        if telegram_id < 1000:
+            await message.answer(
+                "❌ Ошибка: ID слишком короткий. Telegram ID обычно содержит больше цифр.\n\n"
+                "Попробуйте еще раз или нажмите 'Назад' для отмены.",
+                reply_markup=get_user_management_menu()
+            )
+            return
+        
+        # Проверяем, существует ли такой пользователь в доверенных
+        is_allowed = await access_service.is_user_allowed(telegram_id)
+        if not is_allowed:
+            await message.answer(
+                f"⚠️ Пользователь с ID {telegram_id} не найден в списке доверенных.",
+                reply_markup=get_user_management_menu()
+            )
+            await state.clear()
+            return
+        
+        # Удаляем пользователя
+        success = await access_service.remove_allowed_user(telegram_id)
+        
+        if success:
+            await message.answer(
+                f"✅ Пользователь с ID {telegram_id} успешно удален из списка доверенных!",
+                reply_markup=get_user_management_menu()
+            )
+        else:
+            await message.answer(
+                f"❌ Ошибка при удалении пользователя {telegram_id}.\n"
+                "Попробуйте еще раз позже.",
+                reply_markup=get_user_management_menu()
+            )
+        
+        await state.clear()
+        
+    except ValueError:
+        await message.answer(
+            "❌ Ошибка: Неверный формат ID.\n\n"
+            "Попробуйте еще раз или нажмите 'Назад' для отмены.",
+            reply_markup=get_user_management_menu()
+        )
+        await state.clear()
+    except Exception as e:
+        await message.answer(
+            f"❌ Произошла ошибка: {str(e)}\n\n"
+            "Попробуйте еще раз или нажмите 'Назад' для отмены.",
+            reply_markup=get_user_management_menu()
+        )
+        await state.clear()
+
+
 @router.callback_query(F.data == "add_user")
 async def add_user_start(callback: CallbackQuery, state: FSMContext):
     """Начать процесс добавления пользователя"""
@@ -309,24 +378,29 @@ async def add_user_start(callback: CallbackQuery, state: FSMContext):
 
 
 @router.callback_query(F.data == "remove_user")
-async def remove_user_start(callback: CallbackQuery):
+async def remove_user_start(callback: CallbackQuery, state: FSMContext):
     """Начать процесс удаления пользователя"""
     try:
         users = await access_service.get_all_allowed_users()
         
         if not users:
-            text = "❌ Нет пользователей для удаления"
+            await callback.message.edit_text(
+                "❌ Нет пользователей для удаления",
+                reply_markup=get_user_management_menu()
+            )
         else:
+            await state.set_state(UserManagementStates.waiting_for_user_id_to_remove)
             text = "❌ Удаление пользователя\n\n"
             text += "Отправьте Telegram ID пользователя, которого хотите удалить:\n\n"
             for i, user in enumerate(users, 1):
                 name = user.first_name or "Неизвестно"
                 text += f"{i}. {name} - ID: {user.telegram_id}\n"
-        
-        await callback.message.edit_text(
-            text,
-            reply_markup=get_user_management_menu()
-        )
+            text += "\nИли нажмите 'Назад' для отмены."
+            
+            await callback.message.edit_text(
+                text,
+                reply_markup=get_user_management_menu()
+            )
         
     except Exception as e:
         await callback.message.edit_text(
@@ -414,6 +488,75 @@ async def handle_add_user_id(message: Message, state: FSMContext):
             "Попробуйте еще раз или нажмите 'Назад' для отмены.",
             reply_markup=get_user_management_menu()
         )
+    except Exception as e:
+        await message.answer(
+            f"❌ Произошла ошибка: {str(e)}\n\n"
+            "Попробуйте еще раз или нажмите 'Назад' для отмены.",
+            reply_markup=get_user_management_menu()
+        )
+        await state.clear()
+
+
+@router.message(UserManagementStates.waiting_for_user_id_to_remove)
+async def handle_remove_user_id(message: Message, state: FSMContext):
+    """Обработка ID пользователя для удаления"""
+    try:
+        # Валидация ID
+        user_id_text = message.text.strip()
+        
+        if not user_id_text.isdigit():
+            await message.answer(
+                "❌ Ошибка: ID должен содержать только цифры.\n\n"
+                "Попробуйте еще раз или нажмите 'Назад' для отмены.",
+                reply_markup=get_user_management_menu()
+            )
+            return
+        
+        telegram_id = int(user_id_text)
+        
+        # Проверяем диапазон Telegram ID (обычно больше 1000)
+        if telegram_id < 1000:
+            await message.answer(
+                "❌ Ошибка: ID слишком короткий. Telegram ID обычно содержит больше цифр.\n\n"
+                "Попробуйте еще раз или нажмите 'Назад' для отмены.",
+                reply_markup=get_user_management_menu()
+            )
+            return
+        
+        # Проверяем, существует ли такой пользователь в доверенных
+        is_allowed = await access_service.is_user_allowed(telegram_id)
+        if not is_allowed:
+            await message.answer(
+                f"⚠️ Пользователь с ID {telegram_id} не найден в списке доверенных.",
+                reply_markup=get_user_management_menu()
+            )
+            await state.clear()
+            return
+        
+        # Удаляем пользователя
+        success = await access_service.remove_allowed_user(telegram_id)
+        
+        if success:
+            await message.answer(
+                f"✅ Пользователь с ID {telegram_id} успешно удален из списка доверенных!",
+                reply_markup=get_user_management_menu()
+            )
+        else:
+            await message.answer(
+                f"❌ Ошибка при удалении пользователя {telegram_id}.\n"
+                "Попробуйте еще раз позже.",
+                reply_markup=get_user_management_menu()
+            )
+        
+        await state.clear()
+        
+    except ValueError:
+        await message.answer(
+            "❌ Ошибка: Неверный формат ID.\n\n"
+            "Попробуйте еще раз или нажмите 'Назад' для отмены.",
+            reply_markup=get_user_management_menu()
+        )
+        await state.clear()
     except Exception as e:
         await message.answer(
             f"❌ Произошла ошибка: {str(e)}\n\n"
