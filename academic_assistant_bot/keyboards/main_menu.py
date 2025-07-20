@@ -9,7 +9,7 @@ def get_main_menu() -> InlineKeyboardMarkup:
     keyboard.button(text="📝 Новая работа", callback_data="new_work")
     keyboard.button(text="🗑️ Очистить контекст", callback_data="clear_context")
     keyboard.button(text="👥 Управление пользователями", callback_data="user_management")
-    keyboard.button(text="⚙️ Настройки", callback_data="settings")
+    keyboard.button(text="⚙️ Выбрать модель", callback_data="settings")
     keyboard.button(text="ℹ️ Помощь", callback_data="help")
 
     keyboard.adjust(1)  # По одной кнопке в ряд
