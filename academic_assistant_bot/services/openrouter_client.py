@@ -73,7 +73,7 @@ class OpenRouterClient:
         payload = {
             "model": model,  # ← МОДЕЛЬ ИЗ БАЗЫ ДАННЫХ!
             "messages": messages,
-            "max_tokens": 40000,
+            "max_tokens": 16000,
             "temperature": 0.7
         }
 
@@ -83,7 +83,7 @@ class OpenRouterClient:
                         f"{self.base_url}/chat/completions",
                         headers=self.headers,
                         json=payload,
-                        timeout=aiohttp.ClientTimeout(total=60)
+                        timeout=aiohttp.ClientTimeout(total=300)
                 ) as response:
 
                     if response.status == 200:
