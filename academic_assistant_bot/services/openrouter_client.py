@@ -1,5 +1,6 @@
 import aiohttp
 import asyncio
+import json
 from typing import List, Dict, Optional
 from config import OPENROUTER_API_KEY, OPENROUTER_BASE_URL
 from services.user_service import user_service
@@ -71,10 +72,11 @@ class OpenRouterClient:
         messages.append({"role": "user", "content": prompt})
 
         payload = {
-            "model": model,  # ← МОДЕЛЬ ИЗ БАЗЫ ДАННЫХ!
+            "model": model,
             "messages": messages,
             "max_tokens": 16000,
-            "temperature": 0.7
+            "temperature": 0.7,
+            "stream": True
         }
 
         try:
@@ -86,21 +88,43 @@ class OpenRouterClient:
                         timeout=aiohttp.ClientTimeout(total=300)
                 ) as response:
 
-                    if response.status == 200:
-                        result = await response.json()
-                        generated_text = result["choices"][0]["message"]["content"]
-                        
-                        # Сохраняем контекст разговора в Redis
-                        if use_context:
-                            # Добавляем запрос пользователя
-                            await context_service.add_message_to_context(user_id, "user", prompt)
-                            # Добавляем ответ ассистента
-                            await context_service.add_message_to_context(user_id, "assistant", generated_text)
-                        
-                        return generated_text
-                    else:
+                    if response.status != 200:
                         error_text = await response.text()
                         raise Exception(f"OpenRouter API error: {response.status} - {error_text}")
+
+                    collected_messages = []
+                    
+                    async for line in response.content:
+                        line = line.decode('utf-8').strip()
+                        if not line:
+                            continue
+                            
+                        if line.startswith('data: '):
+                            if line == 'data: [DONE]':
+                                break
+                                
+                            try:
+                                json_str = line[6:]  # Skip "data: "
+                                chunk = json.loads(json_str)
+                                content = chunk['choices'][0]['delta'].get('content', '')
+                                if content:
+                                    collected_messages.append(content)
+                            except json.JSONDecodeError:
+                                continue
+
+                    generated_text = "".join(collected_messages)
+
+                    if not generated_text:
+                        raise Exception("Получен пустой ответ от модели")
+                        
+                    # Сохраняем контекст разговора в Redis
+                    if use_context:
+                        # Добавляем запрос пользователя
+                        await context_service.add_message_to_context(user_id, "user", prompt)
+                        # Добавляем ответ ассистента
+                        await context_service.add_message_to_context(user_id, "assistant", generated_text)
+                    
+                    return generated_text
 
         except asyncio.TimeoutError:
             raise Exception("Timeout: Запрос занял слишком много времени")
