@@ -1,0 +1,27 @@
+[Unit]
+Description=Academic Assistant ARQ Worker
+After=network.target
+After=redis.service
+Wants=redis.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/academicAI/academic_assistant_bot
+Environment=PATH=/opt/academicAI/academic_assistant_bot/venv/bin
+ExecStart=/opt/academicAI/academic_assistant_bot/venv/bin/arq worker.WorkerSettings
+Restart=always
+RestartSec=10
+
+# Логирование
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=academic-worker
+
+# Безопасность
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/opt/academicAI/academic_assistant_bot
+
+[Install]
+WantedBy=multi-user.target
