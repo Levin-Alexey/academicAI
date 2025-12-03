@@ -8,8 +8,8 @@ Wants=redis.service
 Type=simple
 User=root
 WorkingDirectory=/opt/academicAI/academic_assistant_bot
-Environment=PATH=/opt/academicAI/academic_assistant_bot/venv/bin
-ExecStart=/opt/academicAI/academic_assistant_bot/venv/bin/arq worker.WorkerSettings
+Environment=PATH=/opt/venv/bin
+ExecStart=/opt/venv/bin/arq worker.WorkerSettings
 Restart=always
 RestartSec=10
 
