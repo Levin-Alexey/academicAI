@@ -25,7 +25,7 @@ def get_settings_menu(current_model: str) -> InlineKeyboardMarkup:
         ("🧠 DeepSeek", "deepseek/deepseek-chat-v3-0324:free"),
         ("🤖 Claude Sonnet 4", "anthropic/claude-sonnet-4"),
         ("💡 Gemini 2.5 Flash", "google/gemini-2.5-flash"),
-        ("🌟 OpenAI: GPT-4.1 Mini", "openai/gpt-4.1-mini")
+        ("🌟 xAI: Grok Code Fast 1", "x-ai/grok-code-fast-1")
     ]
 
     for name, model_id in models:
